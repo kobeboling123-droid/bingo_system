@@ -1,116 +1,63 @@
-    <!DOCTYPE html>
-<html lang="zh-TW">
+<!DOCTYPE html>
+<html>
 <head>
-<meta charset="UTF-8">
-<title>開獎結果</title>
-<style>
-    body {
-        font-family: Arial;
-    }
-
-    table {
-        border-collapse: collapse;
-        width: 100%;
-        font-size: 12px;
-    }
-
-    th, td {
-        border: 1px solid #ccc;
-        text-align: center;
-        padding: 4px;
-    }
-
-    /* 開獎號碼 */
-    .hit {
-        background-color: yellow;
-        color: black;
-        font-weight: bold;
-    }
-
-    /* 超級獎號 */
-    .super {
-        background-color: black;
-        color: yellow;
-        font-weight: bold;
-    }
-
-    /* 奇偶列底色 */
-    .row-gray {
-        background-color: #f2f2f2;
-    }
-
-    /* 每6列粗線 */
-    .group-border {
-        border-bottom: 3px solid black;
-    }
-
-</style>
+    <meta charset="UTF-8">
+    <title>Bingo</title>
+    <style>
+        table { border-collapse: collapse; }
+        td, th {
+            border: 1px solid #ccc;
+            padding: 4px;
+            text-align: center;
+        }
+        .hit {
+            background: yellow;
+            color: black;
+        }
+        .normal {
+            background: white;
+        }
+        .alt {
+            background: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
 
-<h2>最新開獎結果</h2>
-<div id="latest"></div>
+<h1>最新開獎結果</h1>
+<p>{{ latest.期別 }} - {{ latest.時間 }}</p>
+<p>
+{% for n in latest.號碼 %}
+    <span class="hit">{{ n }}</span>
+{% endfor %}
+</p>
 
 <h2>歷史表格（最近24期）</h2>
-<table id="table"></table>
 
-<script>
-async function loadData() {
-    const res = await fetch("/data");
-    const data = await res.json();
+<table>
+    <tr>
+        <th>期別</th>
+        <th>時間</th>
+        {% for i in range(1,81) %}
+            <th>{{ i }}</th>
+        {% endfor %}
+    </tr>
 
-    const latest = data[0];
+    {% for row in history %}
+    <tr class="{{ 'alt' if loop.index % 2 == 0 else '' }}">
+        <td>{{ row.期別 }}</td>
+        <td>{{ row.時間 }}</td>
 
-    // 最新開獎
-    document.getElementById("latest").innerHTML =
-        `期別: ${latest.期別} | 時間: ${latest.時間} <br> 號碼: ${latest.號碼.join(", ")}`;
-
-    // 取前24期
-    const rows = data.slice(0, 24);
-
-    const table = document.getElementById("table");
-
-    // 表頭
-    let header = "<tr><th>期別</th><th>時間</th>";
-    for (let i = 1; i <= 80; i++) {
-        header += `<th>${i}</th>`;
-    }
-    header += "</tr>";
-    table.innerHTML = header;
-
-    rows.forEach((row, index) => {
-
-        let trClass = (index % 2 === 0) ? "row-gray" : "";
-
-        // 每6列加粗線
-        if ((index + 1) % 6 === 0) {
-            trClass += " group-border";
-        }
-
-        let html = `<tr class="${trClass}">
-            <td>${row.期別}</td>
-            <td>${row.時間}</td>`;
-
-        for (let i = 1; i <= 80; i++) {
-            let cls = "";
-
-            if (row.號碼.includes(i.toString().padStart(2, "0"))) {
-                cls = "hit";
-            }
-
-            // 如果你之後有 super number，可在這裡加判斷
-            // if (...) cls = "super";
-
-            html += `<td class="${cls}">${i}</td>`;
-        }
-
-        html += "</tr>";
-        table.innerHTML += html;
-    });
-}
-
-loadData();
-</script>
+        {% for i in range(1,81) %}
+            {% if i in row.號碼 %}
+                <td class="hit">{{ i }}</td>
+            {% else %}
+                <td class="normal"></td>
+            {% endif %}
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
 
 </body>
 </html>
