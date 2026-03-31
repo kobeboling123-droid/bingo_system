@@ -13,4 +13,4 @@ print("準備啟動 Flask")
 
 if __name__ == "__main__":
     print("進入 main")
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=10000)
