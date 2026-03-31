@@ -1,5 +1,5 @@
 import requests
-from database import 取得所有期別, 寫入資料
+from database import 取得最近N期, 寫入資料
 
 
 def 找出缺口(期別列表):
@@ -20,22 +20,25 @@ def 找出缺口(期別列表):
 def 補單一期別(期別):
     """補單一缺失資料"""
     try:
-        url = f"https://api.taiwanlottery.com/TLCAPIWeB/Lottery/BingoResult?pageNum=1&pageSize=50"
+        url = "https://api.taiwanlottery.com/TLCAPIWeB/Lottery/BingoResult?pageNum=1&pageSize=100"
 
         res = requests.get(url, timeout=5)
+        res.raise_for_status()
         data = res.json()
 
         items = data["content"]["lottoBingoRes"]
 
         for item in items:
-            if int(item["period"]) == 期別:
+            if int(item["period"]) == int(期別):
+
                 result = {
-                    "期別": item["period"],
+                    "期別": int(item["period"]),
                     "開獎時間": item["time"],
-                    "號碼": item["drawNumbers"],
-                    "大小": item["bigSmall"],
-                    "單雙": item["oddEven"]
+                    "號碼": list(map(str, item["drawNumbers"])),
+                    "大小": item.get("bigSmall"),
+                    "單雙": item.get("oddEven")
                 }
+
                 寫入資料([result])
                 print("補洞成功:", 期別)
                 return
@@ -46,11 +49,13 @@ def 補單一期別(期別):
 
 def 補洞主程式():
     """補洞主流程"""
-    期別列表 = 取得所有期別()
+    期別資料 = 取得最近N期(200)
 
-    if not 期別列表:
+    if not 期別資料:
         print("資料庫為空")
         return
+
+    期別列表 = [r[0] for r in 期別資料]
 
     缺口 = 找出缺口(期別列表)
 

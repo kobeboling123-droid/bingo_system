@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from api import api_bp
 
 app = Flask(__name__)
@@ -14,3 +14,9 @@ print("準備啟動 Flask")
 if __name__ == "__main__":
     print("進入 main")
     app.run(host="0.0.0.0", port=10000)
+
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
