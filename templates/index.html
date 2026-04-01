@@ -3,47 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <title>Bingo</title>
+
     <style>
-        table { border-collapse: collapse; }
+        table { border-collapse: collapse; font-size: 12px; }
         td, th {
             border: 1px solid #ccc;
-            padding: 4px;
+            padding: 3px;
             text-align: center;
+            min-width: 20px;
         }
+
+        /* 1. 中獎格：黃底黑字，直接顯示數字 */
         .hit {
             background: yellow;
             color: black;
+            font-weight: bold;
         }
-        .normal {
-            background: white;
+
+        /* 2. 超級獎號：黑底黃字 */
+        /* 超級獎號：黑底黃字，強制覆蓋 */
+        .super-hit {
+            background: black !important;
+            color: yellow !important;
+            font-weight: bold;
         }
+
+
+        /* 每六期粗線：下邊框加粗 */
+        .six-row-border td {
+            border-bottom: 2px solid black;
+        }
+
         .alt {
             background: #f2f2f2;
         }
+
+        .header {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+
+        /* 3. 每六期粗線：下邊框加粗 */
+        .six-row-border td {
+            border-bottom: 2px solid black;
+        }
     </style>
 </head>
+
 <body>
 
 <h1>最新開獎結果</h1>
 
 <p>
-    {{ latest.期別 }} - {{ latest.時間 }}
+    {{ latest.期別 if latest else '-' }} - {{ latest.時間 if latest else '-' }}
 </p>
 
 <p>
 {% if latest and latest.號碼 %}
     {% for n in latest.號碼 %}
-        <span class="hit">{{ n }}</span>
+        {# 關鍵修正：確保比對時兩邊都是整數 #}
+        {% if n | int == latest.超級獎號 | int %}
+            <span class="super-hit" style="padding: 2px 5px; margin: 2px; border-radius: 3px;">{{ n }}</span>
+        {% else %}
+            <span class="hit" style="padding: 2px 5px; margin: 2px; border-radius: 3px;">{{ n }}</span>
+        {% endif %}
     {% endfor %}
 {% else %}
-    <span>-</span>
+    <span>目前尚無資料</span>
 {% endif %}
 </p>
 
-<h2>歷史表格（最近24期）</h2>
+
+<h2>歷史表格（最近204期）</h2>
 
 <table>
-    <tr>
+
+    <tr class="header">
         <th>期別</th>
         <th>時間</th>
         {% for i in range(1,81) %}
@@ -52,21 +89,31 @@
     </tr>
 
     {% for row in history %}
-    <tr class="{{ 'alt' if loop.index % 2 == 0 else '' }}">
-        <td>{{ row.期別 }}</td>
-        <td>{{ row.時間 }}</td>
+    {# 1. 每六期畫粗線：新增 six-row-border 判斷 #}
+    <tr class="{{ 'alt' if loop.index % 2 == 0 else '' }} {{ 'six-row-border' if loop.index % 6 == 0 else '' }}">
 
-        {% set nums = row.號碼 if row.號碼 is iterable else [] %}
+        <td>{{ row.期別 }}</td>
+        
+        {# 2. 時間優化：只取 時:分 #}
+        <td>{{ row.時間.split(' ')[1][:5] if ' ' in row.時間 else row.時間 }}</td>
+
+        {% set nums = row.號碼 | map('int') | list %}
+        {% set super_num = row.超級獎號 | int %} {# ✅ 直接讀取資料庫傳來的正確獎號 #}
+
 
         {% for i in range(1,81) %}
-            {% if i in nums %}
-                <td class="hit">{{ i }}</td>
+            {% if i == super_num %}
+                <td class="super-hit">{{ i }}</td> {# 4. 超級獎號顯示數字 #}
+            {% elif i in nums %}
+                <td class="hit">{{ i }}</td>      {# 5. 一般中獎顯示數字 #}
             {% else %}
-                <td class="normal"></td>
+                <td></td>
             {% endif %}
         {% endfor %}
     </tr>
     {% endfor %}
+
+
 </table>
 
 </body>
